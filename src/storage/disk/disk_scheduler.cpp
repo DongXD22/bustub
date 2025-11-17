@@ -40,13 +40,6 @@ DiskScheduler::~DiskScheduler() {
  */
 void DiskScheduler::Schedule(DiskRequest r) {
   request_queue_.Put(std::move(r));
-  // if(r.is_write_){
-  //   disk_manager_->WritePage(r.page_id_,r.data_);
-  // }
-  // else{
-  //   disk_manager_->ReadPage(r.page_id_,r.data_);
-  // }
-  // r.callback_.set_value(1);
 }
 
 /**
