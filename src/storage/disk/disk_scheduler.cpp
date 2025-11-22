@@ -38,9 +38,7 @@ DiskScheduler::~DiskScheduler() {
  *
  * @param r The request to be scheduled.
  */
-void DiskScheduler::Schedule(DiskRequest r) {
-  request_queue_.Put(std::move(r));
-}
+void DiskScheduler::Schedule(DiskRequest r) { request_queue_.Put(std::move(r)); }
 
 /**
  * TODO(P1): Add implementation
@@ -51,7 +49,6 @@ void DiskScheduler::Schedule(DiskRequest r) {
  * return until ~DiskScheduler() is called. At that point you need to make sure that the function does return.
  */
 void DiskScheduler::StartWorkerThread() {
-
   while (1) {
     auto req_opt = request_queue_.Get();
     if (req_opt == std::nullopt) return;
@@ -64,7 +61,6 @@ void DiskScheduler::StartWorkerThread() {
     }
     req.callback_.set_value(true);
   }
-
 }
 
 }  // namespace bustub

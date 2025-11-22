@@ -16,8 +16,7 @@ namespace bustub {
 
 /** @brief Parameterized constructor. */
 template <typename KeyType>
-HyperLogLog<KeyType>::HyperLogLog(int16_t n_bits) 
-	: cardinality_(0) {}
+HyperLogLog<KeyType>::HyperLogLog(int16_t n_bits) : cardinality_(0) {}
 
 /**
  * @brief Function that computes binary.
@@ -26,10 +25,9 @@ HyperLogLog<KeyType>::HyperLogLog(int16_t n_bits)
  * @returns binary of a given hash
  */
 template <typename KeyType>
-auto HyperLogLog<KeyType>::ComputeBinary(const hash_t &hash) 
-const -> std::bitset<BITSET_CAPACITY> {
-	/** @TODO(student) Implement this function! */
-	return std::bitset<BITSET_CAPACITY>(hash);
+auto HyperLogLog<KeyType>::ComputeBinary(const hash_t &hash) const -> std::bitset<BITSET_CAPACITY> {
+  /** @TODO(student) Implement this function! */
+  return std::bitset<BITSET_CAPACITY>(hash);
 }
 
 /**
@@ -39,15 +37,14 @@ const -> std::bitset<BITSET_CAPACITY> {
  * @returns leading zeros of given binary set
  */
 template <typename KeyType>
-auto HyperLogLog<KeyType>::PositionOfLeftmostOne
-(const std::bitset<BITSET_CAPACITY> &bset) const -> uint64_t {
-	/** @TODO(student) Implement this function! */
-	for(int i=0;i<BITSET_CAPACITY;i++){
-		if(bset[BITSET_CAPACITY-i-1]){
-			return i+1;
-		}
-	}
-	return BITSET_CAPACITY;
+auto HyperLogLog<KeyType>::PositionOfLeftmostOne(const std::bitset<BITSET_CAPACITY> &bset) const -> uint64_t {
+  /** @TODO(student) Implement this function! */
+  for (int i = 0; i < BITSET_CAPACITY; i++) {
+    if (bset[BITSET_CAPACITY - i - 1]) {
+      return i + 1;
+    }
+  }
+  return BITSET_CAPACITY;
 }
 
 /**
@@ -57,10 +54,10 @@ auto HyperLogLog<KeyType>::PositionOfLeftmostOne
  */
 template <typename KeyType>
 auto HyperLogLog<KeyType>::AddElem(KeyType val) -> void {
-	/** @TODO(student) Implement this function! */
-	hash_t hash=CalculateHash(val);
-	std::bitset<BITSET_CAPACITY> bset=ComputeBinary(hash);
-	reg=PositionOfLeftmostOne(bset);
+  /** @TODO(student) Implement this function! */
+  hash_t hash = CalculateHash(val);
+  std::bitset<BITSET_CAPACITY> bset = ComputeBinary(hash);
+  reg = PositionOfLeftmostOne(bset);
 }
 
 /**
@@ -68,8 +65,8 @@ auto HyperLogLog<KeyType>::AddElem(KeyType val) -> void {
  */
 template <typename KeyType>
 auto HyperLogLog<KeyType>::ComputeCardinality() -> void {
-	/** @TODO(student) Implement this function! */
-	cardinality_=CONSTANT*pow(2,reg);
+  /** @TODO(student) Implement this function! */
+  cardinality_ = CONSTANT * pow(2, reg);
 }
 
 template class HyperLogLog<int64_t>;

@@ -21,10 +21,9 @@
 #include <unordered_map>
 
 #if HEAP
-	#include <queue>
-	#include <set>
+#include <queue>
+#include <set>
 #endif
-
 
 #include "common/config.h"
 #include "common/macros.h"
@@ -35,7 +34,7 @@ enum class AccessType { Unknown = 0, Lookup, Scan, Index };
 
 class LRUKNode {
  public:
-  LRUKNode(size_t k, frame_id_t frame_id) : k_(k), fid_(frame_id) {}
+  LRUKNode(size_t k, frame_id_t frame_id) : k_(k) {}
 
   friend class LRUKReplacer;
   size_t bkward_kth() const { return bkward_kth_; };
@@ -48,11 +47,11 @@ class LRUKNode {
 
   std::list<size_t> history_;
   size_t k_;
-  frame_id_t fid_;
+  // frame_id_t fid_;
   bool is_evictable_{false};
 
   size_t bkward_kth_ = 0;
-};  
+};
 
 /**
  * LRUKReplacer implements the LRU-k replacement policy.

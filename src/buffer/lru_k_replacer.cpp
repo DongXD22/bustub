@@ -34,7 +34,8 @@ bool bustub::LRUKNode::operator<(const LRUKNode &other) const {
   return bkward_kth_ > other.bkward_kth_;
 }
 
-LRUKReplacer::LRUKReplacer(size_t num_frames, size_t k) : replacer_size_(num_frames), k_(k) {}
+LRUKReplacer::LRUKReplacer(size_t num_frames, size_t k)
+    : replacer_size_(num_frames), k_(k), node_heap_(cmp{&node_store_}) {}
 
 /**
  * TODO(P1): Add implementation
@@ -69,7 +70,7 @@ auto LRUKReplacer::Evict() -> std::optional<frame_id_t> {
   curr_size_--;
 
 #else
-	frame_id_t to_evict_id=INT32_MAX;
+  frame_id_t to_evict_id = INT32_MAX;
   LRUKNode *to_evict_node = nullptr;
 
   for (auto &x : node_store_) {
@@ -109,6 +110,11 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id, [[maybe_unused]] AccessType
   auto it = node_store_.find(frame_id);
   if (it == node_store_.end()) {
     it = node_store_.emplace(std::make_pair(frame_id, LRUKNode(k_, frame_id))).first;
+  }
+
+  if (!it->second.is_evictable_) {
+    it->second.insert(current_timestamp_);
+    return;
   }
 
 #if HEAP
@@ -187,7 +193,7 @@ void LRUKReplacer::Remove(frame_id_t frame_id) {
   auto it = node_store_.find(frame_id);
   if (it == node_store_.end()) return;
 
-  BUSTUB_ASSERT(static_cast<size_t>((frame_id) < replacer_size_ && it->second.is_evictable_), "Invalid frame ID.");
+  BUSTUB_ASSERT((static_cast<size_t>(frame_id) < replacer_size_ && it->second.is_evictable_), "Invalid frame ID.");
 
   node_store_.erase(it);
   curr_size_--;

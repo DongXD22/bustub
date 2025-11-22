@@ -62,7 +62,7 @@ class FrameHeader {
   friend class WritePageGuard;
 
  public:
-  explicit FrameHeader(frame_id_t frame_id);
+  explicit FrameHeader(frame_id_t frame_id, page_id_t page_id = INVALID_PAGE_ID);
 
  private:
   auto GetData() const -> const char *;
@@ -95,6 +95,7 @@ class FrameHeader {
    * currently storing. This might allow you to skip searching for the corresponding (page ID, frame ID) pair somewhere
    * else in the buffer pool manager...
    */
+  page_id_t page_id_;
 };
 
 /**
@@ -116,8 +117,8 @@ class BufferPoolManager {
   auto Size() const -> size_t;
   auto NewPage() -> page_id_t;
   auto DeletePage(page_id_t page_id) -> bool;
-  auto CheckedWritePage(page_id_t page_id, AccessType access_type = AccessType::Unknown)
-      -> std::optional<WritePageGuard>;
+  auto CheckedWritePage(page_id_t page_id,
+                        AccessType access_type = AccessType::Unknown) -> std::optional<WritePageGuard>;
   auto CheckedReadPage(page_id_t page_id, AccessType access_type = AccessType::Unknown) -> std::optional<ReadPageGuard>;
   auto WritePage(page_id_t page_id, AccessType access_type = AccessType::Unknown) -> WritePageGuard;
   auto ReadPage(page_id_t page_id, AccessType access_type = AccessType::Unknown) -> ReadPageGuard;
