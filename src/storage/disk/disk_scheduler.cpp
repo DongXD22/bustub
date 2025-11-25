@@ -51,7 +51,8 @@ void DiskScheduler::Schedule(DiskRequest r) { request_queue_.Put(std::move(r)); 
 void DiskScheduler::StartWorkerThread() {
   while (1) {
     auto req_opt = request_queue_.Get();
-    if (req_opt == std::nullopt) return;
+    if (req_opt == std::nullopt) { return;
+}
 
     DiskRequest req = std::move(req_opt.value());
     if (req.is_write_) {

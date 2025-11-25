@@ -82,16 +82,16 @@ class Tuple {
   void DeserializeFrom(const char *storage);
 
   // return RID of current tuple
-  inline auto GetRid() const -> RID { return rid_; }
+  auto GetRid() const -> RID { return rid_; }
 
   // return RID of current tuple
-  inline auto SetRid(RID rid) { rid_ = rid; }
+  auto SetRid(RID rid) { rid_ = rid; }
 
   // Get the address of this tuple in the table's backing store
-  inline auto GetData() const -> const char * { return data_.data(); }
+  auto GetData() const -> const char * { return data_.data(); }
 
   // Get length of the tuple, including varchar length
-  inline auto GetLength() const -> uint32_t { return data_.size(); }
+  auto GetLength() const -> uint32_t { return data_.size(); }
 
   auto GetValue(const Schema *schema, uint32_t column_idx) const -> Value;
 
@@ -99,19 +99,19 @@ class Tuple {
                     const std::vector<uint32_t> &key_attrs) const -> Tuple;
 
   // Is the column value null ?
-  inline auto IsNull(const Schema *schema, uint32_t column_idx) const -> bool {
+  auto IsNull(const Schema *schema, uint32_t column_idx) const -> bool {
     Value value = GetValue(schema, column_idx);
     return value.IsNull();
   }
 
   auto ToString(const Schema *schema) const -> std::string;
 
-  friend inline auto IsTupleContentEqual(const Tuple &a, const Tuple &b) { return a.data_ == b.data_; }
+  friend auto IsTupleContentEqual(const Tuple &a, const Tuple &b) { return a.data_ == b.data_; }
 
  private:
   auto GetDataPtr(const Schema *schema, uint32_t column_idx) const -> const char *;
 
-  RID rid_{};  // if pointing to the table heap, the rid is valid
+  RID rid_;  // if pointing to the table heap, the rid is valid
   std::vector<char> data_;
 };
 

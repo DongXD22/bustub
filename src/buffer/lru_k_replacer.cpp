@@ -23,19 +23,25 @@ namespace bustub {
  * @param num_frames the maximum number of frames
  *  the LRUReplacer will be required to store
  */
-void bustub::LRUKNode::insert(size_t timestamp) {
-  if (history_.size() == k_) history_.pop_front();
+void bustub::LRUKNode::Insert(size_t timestamp) {
+  if (history_.size() == k_) {
+    history_.pop_front();
+  }
   history_.push_back(timestamp);
-  if (history_.size() == k_) bkward_kth_ = history_.front();
+  if (history_.size() == k_) {
+    bkward_kth_ = history_.front();
+  }
 }
 
-bool bustub::LRUKNode::operator<(const LRUKNode &other) const {
-  if (bkward_kth_ == other.bkward_kth_) return history_.front() > other.history_.front();
+auto bustub::LRUKNode::operator<(const LRUKNode &other) const -> bool {
+  if (bkward_kth_ == other.bkward_kth_) {
+    return history_.front() > other.history_.front();
+  }
   return bkward_kth_ > other.bkward_kth_;
 }
 
 LRUKReplacer::LRUKReplacer(size_t num_frames, size_t k)
-    : replacer_size_(num_frames), k_(k), node_heap_(cmp{&node_store_}) {}
+    : replacer_size_(num_frames), k_(k), node_heap_(Cmp{&node_store_}) {}
 
 /**
  * TODO(P1): Add implementation
@@ -62,7 +68,9 @@ auto LRUKReplacer::Evict() -> std::optional<frame_id_t> {
 
 #if HEAP == 1
 
-  if (node_heap_.empty()) return std::nullopt;
+  if (node_heap_.empty()) {
+    return std::nullopt;
+  }
   frame_id_t to_evict_id = *node_heap_.begin();
 
   node_store_.erase(to_evict_id);
@@ -109,11 +117,11 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id, [[maybe_unused]] AccessType
 
   auto it = node_store_.find(frame_id);
   if (it == node_store_.end()) {
-    it = node_store_.emplace(std::make_pair(frame_id, LRUKNode(k_, frame_id))).first;
+    it = node_store_.emplace(frame_id, LRUKNode(k_, frame_id)).first;
   }
 
   if (!it->second.is_evictable_) {
-    it->second.insert(current_timestamp_);
+    it->second.Insert(current_timestamp_);
     return;
   }
 
@@ -124,7 +132,7 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id, [[maybe_unused]] AccessType
   }
 #endif
 
-  it->second.insert(current_timestamp_);
+  it->second.Insert(current_timestamp_);
 
 #if HEAP
   node_heap_.insert(frame_id);
@@ -155,7 +163,9 @@ void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
 
   auto it = node_store_.find(frame_id);
 
-  if (it == node_store_.end() || it->second.is_evictable_ == set_evictable) return;
+  if (it == node_store_.end() || it->second.is_evictable_ == set_evictable) {
+    return;
+  }
 
   curr_size_ += set_evictable ? 1 : -1;
   it->second.is_evictable_ = set_evictable;
@@ -165,7 +175,9 @@ void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
     node_heap_.insert(frame_id);
   } else {
     auto iter = node_heap_.find(frame_id);
-    if (iter != node_heap_.end()) node_heap_.erase(iter);
+    if (iter != node_heap_.end()) {
+      node_heap_.erase(iter);
+    }
   }
 #endif
 }
@@ -191,7 +203,9 @@ void LRUKReplacer::Remove(frame_id_t frame_id) {
   std::lock_guard<std::mutex> guard(latch_);
 
   auto it = node_store_.find(frame_id);
-  if (it == node_store_.end()) return;
+  if (it == node_store_.end()) {
+    return;
+  }
 
   BUSTUB_ASSERT((static_cast<size_t>(frame_id) < replacer_size_ && it->second.is_evictable_), "Invalid frame ID.");
 
@@ -199,7 +213,9 @@ void LRUKReplacer::Remove(frame_id_t frame_id) {
   curr_size_--;
 #if HEAP
   auto iter = node_heap_.find(frame_id);
-  if (iter != node_heap_.end()) node_heap_.erase(iter);
+  if (iter != node_heap_.end()) {
+    node_heap_.erase(iter);
+  }
 #endif
 }
 

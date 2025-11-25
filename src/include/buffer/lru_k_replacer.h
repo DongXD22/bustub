@@ -37,9 +37,9 @@ class LRUKNode {
   LRUKNode(size_t k, frame_id_t frame_id) : k_(k) {}
 
   friend class LRUKReplacer;
-  size_t bkward_kth() const { return bkward_kth_; };
-  void insert(size_t timestamp);
-  bool operator<(const LRUKNode &other) const;
+  auto BkwardKth() const -> size_t { return bkward_kth_; }
+  void Insert(size_t timestamp);
+  auto operator<(const LRUKNode &other) const -> bool;
 
  private:
   /** History of last seen K timestamps of this page. Least recent timestamp stored in front. */
@@ -99,13 +99,15 @@ class LRUKReplacer {
   size_t k_;
   std::mutex latch_;
 #if HEAP == 1
-  struct cmp {
-    const std::unordered_map<frame_id_t, LRUKNode> *store;  // 指针指向外部存储
+  struct Cmp {
+    const std::unordered_map<frame_id_t, LRUKNode> *store_;  // 指针指向外部存储
 
-    bool operator()(const frame_id_t &id1, const frame_id_t &id2) const { return store->at(id2) < store->at(id1); }
+    auto operator()(const frame_id_t &id1, const frame_id_t &id2) const -> bool {
+      return store_->at(id2) < store_->at(id1);
+    }
   };
 
-  std::set<frame_id_t, cmp> node_heap_;
+  std::set<frame_id_t, Cmp> node_heap_;
 #endif
 };  // namespace bustub
 }  // namespace bustub

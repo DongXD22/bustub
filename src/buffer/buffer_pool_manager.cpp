@@ -142,9 +142,11 @@ auto BufferPoolManager::NewPage() -> page_id_t { return next_page_id_.fetch_add(
  */
 auto BufferPoolManager::DeletePage(page_id_t page_id) -> bool {
   std::scoped_lock latch(*bpm_latch_);
-  if (page_table_.count(page_id)) {
+  if (page_table_.count(page_id) != 0u) {
     frame_id_t frame_id = page_table_[page_id];
-    if (frames_[page_id]->pin_count_) return false;
+    if (frames_[page_id]->pin_count_ != 0u) {
+      return false;
+    }
 
     page_table_.erase(page_id);
 
@@ -199,19 +201,21 @@ auto BufferPoolManager::CheckedWritePage(page_id_t page_id, AccessType access_ty
   frame_id_t frame_id;
   {
     std::scoped_lock latch(*bpm_latch_);
-    if (page_table_.count(page_id)) {
+    if (page_table_.count(page_id) != 0u) {
       frame_id = page_table_[page_id];
       frames_[frame_id]->pin_count_++;
       replacer_->SetEvictable(frame_id, false);
     } else {
-      if (free_frames_.size()) {
+      if (!free_frames_.empty() != 0u) {
         frame_id = free_frames_.back();
         free_frames_.pop_back();
       } else {
-        std::optional<frame_id_t> frame_id_ = replacer_->Evict();
-        if (!frame_id_.has_value()) return std::nullopt;
+        std::optional<frame_id_t> frame_id_t = replacer_->Evict();
+        if (!frame_id_t.has_value()) {
+          return std::nullopt;
+        }
 
-        frame_id = frame_id_.value();
+        frame_id = frame_id_t.value();
         if (frames_[frame_id]->is_dirty_) {
           FlushPageUnsafe(frames_[frame_id]->page_id_);
         }
@@ -265,19 +269,21 @@ auto BufferPoolManager::CheckedReadPage(page_id_t page_id, AccessType access_typ
   frame_id_t frame_id;
   {
     std::scoped_lock latch(*bpm_latch_);
-    if (page_table_.count(page_id)) {
+    if (page_table_.count(page_id) != 0u) {
       frame_id = page_table_[page_id];
       frames_[frame_id]->pin_count_++;
       replacer_->SetEvictable(frame_id, false);
     } else {
-      if (free_frames_.size()) {
+      if (!free_frames_.empty() != 0u) {
         frame_id = free_frames_.back();
         free_frames_.pop_back();
       } else {
-        std::optional<frame_id_t> frame_id_ = replacer_->Evict();
-        if (!frame_id_.has_value()) return std::nullopt;
+        std::optional<frame_id_t> frame_id_t = replacer_->Evict();
+        if (!frame_id_t.has_value()) {
+          return std::nullopt;
+        }
 
-        frame_id = frame_id_.value();
+        frame_id = frame_id_t.value();
         if (frames_[frame_id]->is_dirty_) {
           FlushPageUnsafe(frames_[frame_id]->page_id_);
         }
@@ -373,11 +379,15 @@ auto BufferPoolManager::ReadPage(page_id_t page_id, AccessType access_type) -> R
  * @return `false` if the page could not be found in the page table, otherwise `true`.
  */
 auto BufferPoolManager::FlushPageUnsafe(page_id_t page_id) -> bool {
-  if (!page_table_.count(page_id)) return false;
+  if (page_table_.count(page_id) == 0u) {
+    return false;
+  }
   frame_id_t frame_id = page_table_[page_id];
   std::shared_ptr<FrameHeader> frame = frames_[frame_id];
 
-  if (!frame->is_dirty_) return true;
+  if (!frame->is_dirty_) {
+    return true;
+  }
 
   frame->is_dirty_ = false;
 
@@ -409,7 +419,9 @@ auto BufferPoolManager::FlushPageUnsafe(page_id_t page_id) -> bool {
  */
 auto BufferPoolManager::FlushPage(page_id_t page_id) -> bool {
   std::scoped_lock latch(*bpm_latch_);
-  if (!page_table_.count(page_id)) return false;
+  if (page_table_.count(page_id) == 0u) {
+    return false;
+  }
   frame_id_t frame_id = page_table_[page_id];
   std::shared_ptr<FrameHeader> frame = frames_[frame_id];
   frame->rwlatch_.lock_shared();
@@ -432,7 +444,9 @@ auto BufferPoolManager::FlushPage(page_id_t page_id) -> bool {
  * TODO(P1): Add implementation
  */
 void BufferPoolManager::FlushAllPagesUnsafe() {
-  for (const auto &x : page_table_) FlushPageUnsafe(x.first);
+  for (const auto &x : page_table_) {
+    FlushPageUnsafe(x.first);
+  }
 }
 
 /**
@@ -487,7 +501,9 @@ void BufferPoolManager::FlushAllPages() {
  */
 auto BufferPoolManager::GetPinCount(page_id_t page_id) -> std::optional<size_t> {
   std::scoped_lock latch(*bpm_latch_);
-  if (!page_table_.count(page_id)) return std::nullopt;
+  if (page_table_.count(page_id) == 0u) {
+    return std::nullopt;
+  }
   return frames_[page_table_[page_id]]->pin_count_.load();
 }
 

@@ -46,10 +46,10 @@ class LogManager {
 
   auto AppendLogRecord(LogRecord *log_record) -> lsn_t;
 
-  inline auto GetNextLSN() -> lsn_t { return next_lsn_; }
-  inline auto GetPersistentLSN() -> lsn_t { return persistent_lsn_; }
-  inline void SetPersistentLSN(lsn_t lsn) { persistent_lsn_ = lsn; }
-  inline auto GetLogBuffer() -> char * { return log_buffer_; }
+  auto GetNextLSN() -> lsn_t { return next_lsn_; }
+  auto GetPersistentLSN() -> lsn_t { return persistent_lsn_; }
+  void SetPersistentLSN(lsn_t lsn) { persistent_lsn_ = lsn; }
+  auto GetLogBuffer() -> char * { return log_buffer_; }
 
  private:
   // TODO(students): you may add your own member variables

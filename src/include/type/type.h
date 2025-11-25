@@ -38,9 +38,9 @@ class Type {
   static auto GetMinValue(TypeId type_id) -> Value;
   static auto GetMaxValue(TypeId type_id) -> Value;
 
-  inline static auto GetInstance(TypeId type_id) -> Type * { return k_types[type_id]; }
+  static auto GetInstance(TypeId type_id) -> Type * { return k_types[type_id]; }
 
-  inline auto GetTypeId() const -> TypeId { return type_id_; }
+  auto GetTypeId() const -> TypeId { return type_id_; }
 
   // Comparison functions
   //
