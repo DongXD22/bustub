@@ -49,10 +49,11 @@ void DiskScheduler::Schedule(DiskRequest r) { request_queue_.Put(std::move(r)); 
  * return until ~DiskScheduler() is called. At that point you need to make sure that the function does return.
  */
 void DiskScheduler::StartWorkerThread() {
-  while (1) {
+  while (true) {
     auto req_opt = request_queue_.Get();
-    if (req_opt == std::nullopt) { return;
-}
+    if (req_opt == std::nullopt) {
+      return;
+    }
 
     DiskRequest req = std::move(req_opt.value());
     if (req.is_write_) {

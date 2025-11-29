@@ -109,8 +109,9 @@ auto LRUKReplacer::Evict() -> std::optional<frame_id_t> {
  * leaderboard tests.
  */
 void LRUKReplacer::RecordAccess(frame_id_t frame_id, [[maybe_unused]] AccessType access_type) {
-  BUSTUB_ASSERT(static_cast<size_t>(frame_id) < replacer_size_, "Invalid frame ID.");
-
+  if (static_cast<size_t>(frame_id) >= replacer_size_) {
+    throw Exception(ExceptionType::OUT_OF_RANGE, "Invalid frame ID");
+  }
   std::lock_guard<std::mutex> guard(latch_);
 
   current_timestamp_++;
@@ -157,7 +158,9 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id, [[maybe_unused]] AccessType
  * @param set_evictable whether the given frame is evictable or not
  */
 void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
-  BUSTUB_ASSERT(static_cast<size_t>(frame_id) < replacer_size_, "Invalid frame ID.");
+  if (static_cast<size_t>(frame_id) >= replacer_size_) {
+    throw Exception(ExceptionType::OUT_OF_RANGE, "Invalid frame ID");
+  }
 
   std::lock_guard<std::mutex> guard(latch_);
 
@@ -207,16 +210,19 @@ void LRUKReplacer::Remove(frame_id_t frame_id) {
     return;
   }
 
-  BUSTUB_ASSERT((static_cast<size_t>(frame_id) < replacer_size_ && it->second.is_evictable_), "Invalid frame ID.");
+  if (!it->second.is_evictable_) {
+    throw Exception(ExceptionType::INVALID, "Called Remove on a non-evictable frame.");
+  }
 
-  node_store_.erase(it);
-  curr_size_--;
 #if HEAP
   auto iter = node_heap_.find(frame_id);
   if (iter != node_heap_.end()) {
     node_heap_.erase(iter);
   }
 #endif
+
+  node_store_.erase(it);
+  curr_size_--;
 }
 
 /**

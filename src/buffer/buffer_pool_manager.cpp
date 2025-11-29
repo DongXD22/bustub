@@ -119,8 +119,52 @@ auto BufferPoolManager::Size() const -> size_t { return num_frames_; }
  *
  * @return The page ID of the newly allocated page.
  */
-auto BufferPoolManager::NewPage() -> page_id_t { return next_page_id_.fetch_add(1); }
+auto BufferPoolManager::NewPage() -> page_id_t {
+  std::scoped_lock latch(*bpm_latch_);
 
+  frame_id_t frame_id;
+  page_id_t new_page_id;
+
+  // 1. 获取可用 Frame (逻辑不变)
+  if (!free_frames_.empty()) {
+    frame_id = free_frames_.back();
+    free_frames_.pop_back();
+  } else {
+    auto frame_id_opt = replacer_->Evict();
+    if (!frame_id_opt.has_value()) {
+      return INVALID_PAGE_ID;
+    }
+    frame_id = frame_id_opt.value();
+
+    if (frames_[frame_id]->is_dirty_) {
+      FlushPageUnsafe(frames_[frame_id]->page_id_);
+    }
+
+    page_table_.erase(frames_[frame_id]->page_id_);
+  }
+
+  // 2. 分配 ID
+  new_page_id = next_page_id_.fetch_add(1);
+
+  // 3. 初始化 Frame
+  frames_[frame_id]->Reset();
+  frames_[frame_id]->page_id_ = new_page_id;
+  frames_[frame_id]->is_dirty_ = true;
+
+  frames_[frame_id]->pin_count_ = 0;
+
+  // frames_[frame_id]->is_dirty_ = false;
+
+  // 4. 更新元数据
+  page_table_[new_page_id] = frame_id;
+
+  // [关键修改 2] 必须设为 true (可驱逐)！
+  // 既然 pin_count 是 0，它理应可以被替换算法驱逐。
+  replacer_->RecordAccess(frame_id);
+  replacer_->SetEvictable(frame_id, true);
+
+  return new_page_id;
+}
 /**
  * @brief Removes a page from the database, both on disk and in memory.
  *
@@ -142,13 +186,14 @@ auto BufferPoolManager::NewPage() -> page_id_t { return next_page_id_.fetch_add(
  */
 auto BufferPoolManager::DeletePage(page_id_t page_id) -> bool {
   std::scoped_lock latch(*bpm_latch_);
-  if (page_table_.count(page_id) != 0u) {
+  if (page_table_.count(page_id) != 0U) {
     frame_id_t frame_id = page_table_[page_id];
-    if (frames_[page_id]->pin_count_ != 0u) {
+    if (frames_[frame_id]->pin_count_ != 0U) {
       return false;
     }
 
     page_table_.erase(page_id);
+    replacer_->Remove(frame_id);
 
     frames_[frame_id]->Reset();
     free_frames_.push_back(frame_id);
@@ -201,12 +246,12 @@ auto BufferPoolManager::CheckedWritePage(page_id_t page_id, AccessType access_ty
   frame_id_t frame_id;
   {
     std::scoped_lock latch(*bpm_latch_);
-    if (page_table_.count(page_id) != 0u) {
+    if (page_table_.count(page_id) != 0U) {
       frame_id = page_table_[page_id];
       frames_[frame_id]->pin_count_++;
       replacer_->SetEvictable(frame_id, false);
     } else {
-      if (!free_frames_.empty() != 0u) {
+      if (static_cast<unsigned int>(!free_frames_.empty()) != 0U) {
         frame_id = free_frames_.back();
         free_frames_.pop_back();
       } else {
@@ -269,12 +314,12 @@ auto BufferPoolManager::CheckedReadPage(page_id_t page_id, AccessType access_typ
   frame_id_t frame_id;
   {
     std::scoped_lock latch(*bpm_latch_);
-    if (page_table_.count(page_id) != 0u) {
+    if (page_table_.count(page_id) != 0U) {
       frame_id = page_table_[page_id];
       frames_[frame_id]->pin_count_++;
       replacer_->SetEvictable(frame_id, false);
     } else {
-      if (!free_frames_.empty() != 0u) {
+      if (static_cast<unsigned int>(!free_frames_.empty()) != 0U) {
         frame_id = free_frames_.back();
         free_frames_.pop_back();
       } else {
@@ -379,7 +424,7 @@ auto BufferPoolManager::ReadPage(page_id_t page_id, AccessType access_type) -> R
  * @return `false` if the page could not be found in the page table, otherwise `true`.
  */
 auto BufferPoolManager::FlushPageUnsafe(page_id_t page_id) -> bool {
-  if (page_table_.count(page_id) == 0u) {
+  if (page_table_.count(page_id) == 0U) {
     return false;
   }
   frame_id_t frame_id = page_table_[page_id];
@@ -419,14 +464,14 @@ auto BufferPoolManager::FlushPageUnsafe(page_id_t page_id) -> bool {
  */
 auto BufferPoolManager::FlushPage(page_id_t page_id) -> bool {
   std::scoped_lock latch(*bpm_latch_);
-  if (page_table_.count(page_id) == 0u) {
+  if (page_table_.count(page_id) == 0U) {
     return false;
   }
   frame_id_t frame_id = page_table_[page_id];
   std::shared_ptr<FrameHeader> frame = frames_[frame_id];
-  frame->rwlatch_.lock_shared();
+  // frame->rwlatch_.lock_shared();
   bool res = FlushPageUnsafe(page_id);
-  frame->rwlatch_.unlock_shared();
+  // frame->rwlatch_.unlock_shared();
   return res;
 }
 
@@ -501,7 +546,7 @@ void BufferPoolManager::FlushAllPages() {
  */
 auto BufferPoolManager::GetPinCount(page_id_t page_id) -> std::optional<size_t> {
   std::scoped_lock latch(*bpm_latch_);
-  if (page_table_.count(page_id) == 0u) {
+  if (page_table_.count(page_id) == 0U) {
     return std::nullopt;
   }
   return frames_[page_table_[page_id]]->pin_count_.load();

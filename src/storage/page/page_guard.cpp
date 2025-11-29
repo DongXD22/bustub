@@ -83,8 +83,9 @@ ReadPageGuard::ReadPageGuard(ReadPageGuard &&that) noexcept
  * @return ReadPageGuard& The newly valid `ReadPageGuard`.
  */
 auto ReadPageGuard::operator=(ReadPageGuard &&that) noexcept -> ReadPageGuard & {
-  if (this == &that) { return *this;
-}
+  if (this == &that) {
+    return *this;
+  }
 
   Drop();
   page_id_ = that.page_id_;
@@ -144,8 +145,9 @@ void ReadPageGuard::Flush() {
  * TODO(P1): Add implementation.
  */
 void ReadPageGuard::Drop() {
-  if (!is_valid_) { return;
-}
+  if (!is_valid_) {
+    return;
+  }
   if (frame_) {
     frame_->rwlatch_.unlock_shared();
     {
@@ -238,8 +240,9 @@ WritePageGuard::WritePageGuard(WritePageGuard &&that) noexcept
  * @return WritePageGuard& The newly valid `WritePageGuard`.
  */
 auto WritePageGuard::operator=(WritePageGuard &&that) noexcept -> WritePageGuard & {
-  if (this == &that) { return *this;
-}
+  if (this == &that) {
+    return *this;
+  }
 
   Drop();
   page_id_ = that.page_id_;
@@ -307,8 +310,9 @@ void WritePageGuard::Flush() {
  * TODO(P1): Add implementation.
  */
 void WritePageGuard::Drop() {
-  if (!is_valid_) { return;
-}
+  if (!is_valid_) {
+    return;
+  }
   if (frame_) {
     frame_->is_dirty_ = true;
     frame_->rwlatch_.unlock();
